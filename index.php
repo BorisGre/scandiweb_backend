@@ -1,15 +1,22 @@
 <?php
-  require_once 'ProductsController.php';
-  //namespace API;
-  //use API\Config;
-  require_once 'autoload.php';
-  require_once 'config.php';
+  //namespace Scandiweb;
+  define('__BASE_DIR__', '.');
+  
+  require_once 'LoadClasses.php';
 
   try {
-    
+
+    $loadClass = new LoadClasses();
+    $loadClass->initLoad(__BASE_DIR__);
+
+   // var_dump(get_declared_classes()); 
+   // var_dump(LoadClasses);
     $config = new Config();
-    $api = new ProductsAPIController($config);
+    $api = new API($config, $loadClass);
     var_dump($api->run());
+   
+    ///a = new LoadClasses;
+   
      echo "AAA";
      //echo $api->run();
   } catch (Exception $e) {

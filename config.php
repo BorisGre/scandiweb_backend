@@ -1,5 +1,5 @@
 <?php
-//namespace API\Config;
+//namespace Scandiweb;
 
   class Config 
   {

@@ -2,7 +2,7 @@
 
 //use Scandiweb\ProductsAPI;
 
-abstract class AbsctractAPIController
+abstract class AbsctractController
 {
    protected $method; //GET|POST|PUT|DELETE
 
@@ -17,10 +17,4 @@ abstract class AbsctractAPIController
    abstract public function mapRequestToAction();
 
    abstract public function executeAction($mappedAction);
-
-   abstract public function getStatusMessage($statusCode);
-
-   abstract protected function prepareResponse($data);
-
-   abstract public function response($statusCode, $data);
 }

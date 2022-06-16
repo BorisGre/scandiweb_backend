@@ -1,29 +1,52 @@
 <?php
-
+//namespace Scandiweb;
 	class DB{
 	
-		private $link = false;
-		private $instance = false;
-		private $mysql = null;
+		private $__link = false;
+		private $__instance = false;
+		private $__mysql = null;
 	
-		private $config = array();
+		private $__config = array();
 		
 		private $where;
 		private $limit;
 		private $order;
+
+		private $__DBtables = array();
+		private $__currentTable = 'product';
 		
 		public function __construct($config){
 
-			$this->config = $config;
-			$this->mysql = new mysqli;
-			$this->link = $this->connect();
+			$this->__config = $config;
+			$this->__mysql = new mysqli;
+			$this->__link = $this->connect();
+			$this->buildTablesLinks = $this->buildLinks();
 		}
 
 		public function __destruct(){
 
-			if($this->link){
-				$this->mysql->close();
+			if($this->__link){
+				$this->__mysql->close();
 			} 
+		}
+
+		private function buildLinks(){
+
+			$res = $this->__mysql->query("show tables");
+		 	$rows = $res->fetch_all(MYSQLI_NUM);
+			
+			foreach($rows as $row => $value){ 
+
+				$table = $value[0];
+				array_push($this->__DBtables, $value[0]);
+				$this->$table = fn() => $this->bl($table);
+			}
+		}
+
+		public function bl($table){
+
+			$this->currentTable = $table;
+			return $this;
 		}
 
 		/*
@@ -32,12 +55,12 @@
 		
 		private function connect(){
 
-			if(!is_resource($this->link) || empty($this->link)){
+			if(!is_resource($this->__link) || empty($this->__link)){
 
 				try {
-					$link = $this->mysql->real_connect($this->config['host'], $this->config['user'], $this->config['password']);
-					$this->mysql->select_db($this->config['database']);
-					$this->mysql->character_set_name('utf8');
+					$link = $this->__mysql->real_connect($this->__config['host'], $this->__config['user'], $this->__config['password']);
+					$this->__mysql->select_db($this->__config['database']);
+					//$this->__mysql->character_set_name('utf8');
 
 				} catch (Exception $e){
 					throw new Exception('Could not connect to MySQL database.');
@@ -123,15 +146,17 @@
 		 * MySQL Query methods
 		 */
 
-		public function count($table){
+		public function count($table = ''){
+
+			$table = $table ? $table : $this->__currentTable;
 
 			$query = sprintf("SELECT COUNT(*) FROM (%s)", $table);
-			$this->mysql->real_query($query);
-			$result = $this->mysql->use_result();
-			return $result->fetch_row();
+			$this->__mysql->real_query($query);
+			$result = $this->__mysql->use_result();
+			return $result->fetch_row()[0];
 		}
 
-		public function add($table, $data){
+		public function add($table = '', $data){
 			
 			$fields = '';
 			$values = '';
@@ -139,31 +164,39 @@
 			foreach($data as $column => $value){
 
 				$fields .= sprintf("`%s`,", $column);
-				$values .= sprintf("'%s',", $this->mysql->real_escape_string($value));
+				$values .= sprintf("'%s',", $this->__mysql->real_escape_string($value));
 			}
 			$fields = substr($fields, 0, -1);
 			$values = substr($values, 0, -1);
+
+			$table = $table ? $table : $this->__currentTable;
 			$sql = sprintf("INSERT INTO %s (%s) VALUES (%s)", $table, $fields, $values);
 		
-			if(!$this->mysql->query($sql)){
+			if(!$this->__mysql->query($sql)){
 
-				throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->mysql->errno.': '.$this->mysql->error);
+				throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->__mysql->errno.': '.$this->__mysql->error);
 			}else{
 
 				return true;
 			}
 		}
 		
-		public function get($table, $page = 0, $itemsPerPage){
+		public function get($table = '', $page = 0, $itemsPerPage){
 			
+			echo "eurika\n";
+			//return true;
+
 		    $data = [];
+
+			$table = $table ? $table : $this->__currentTable;
+
 			$sql = sprintf("SELECT * FROM %s limit %s,%s", $table, $page*$itemsPerPage, $itemsPerPage);
 
 			 try {
 
-					$this->mysql->real_query($sql);
+					$this->__mysql->real_query($sql);
 				
-					if ($result = $this->mysql->use_result()){
+					if ($result = $this->__mysql->use_result()){
 					//	echo "CCC";
 						$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 						$data = $rows;
@@ -171,18 +204,26 @@
 							//var_dump($row);
 						}
 						$result->close();
-          }
+         			}
 
 			} catch(Exception $e){
 
-			 throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->mysql->errno.': '.$this->mysql->error);
+			 throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->__mysql->errno.': '.$this->__mysql->error);
 			}
 			
 			return $data;
 		}
+
+		public function getTypes(){
+
+			$this->__mysql->real_query('SELECT name FROM TYPE');
+			
+
+			return $types;
+		}
 	
 		
-		public function update($table, $data){
+		public function update($table = '', $data){
 
 			$fields = '';
 			$values = '';
@@ -190,23 +231,27 @@
 			foreach($data as $column => $value){
 
 				$fields .= sprintf("`%s`,", $column);
-				$values .= sprintf("'%s',", $this->mysql->real_escape_string($value));
+				$values .= sprintf("'%s',", $this->__mysql->real_escape_string($value));
 			}
 			$fields = substr($fields, 0, -1);
 			$values = substr($values, 0, -1);
+
+			$table = $table ? $table : $this->__currentTable;
 			$sql = sprintf("UPDATE INTO %s (%s) VALUES (%s)", $table, $fields, $values);
 		
-			if(!$this->mysql->query($sql)){
+			if(!$this->__mysql->real_query($sql)){
 
-				throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->mysql->errno.': '.$this->mysql->error);
+				throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->__mysql->errno.': '.$this->__mysql->error);
 			}else{
 
 				return true;
 			}		
 		}
 		
-		public function delete($table, $data){
+		public function delete($table = '', $data){
 			
+			$table = $table ? $table : $this->__currentTable;
+
 			foreach($data as $field => $value){
 
 				$this->where = $field .'="'.$value.'"';
@@ -219,9 +264,9 @@
 			
 				$sql = sprintf("DELETE FROM %s%s", $table, ' WHERE '.$this->where); //$this->extra());
 			
-				if(!$this->mysql->real_query($sql)){
+				if(!$this->__mysql->real_query($sql)){
 					
-					throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->mysql->errno.': '.$this->mysql->error);
+					throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->__mysql->errno.': '.$this->__mysql->error);
 				}else{
 					return true;
 				}
