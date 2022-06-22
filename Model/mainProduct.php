@@ -1,10 +1,10 @@
 <?php
 //use ;
-require_once "AbstractProduct.php";
+//require_once "AbstractProduct.php";
 
 class Product extends AbstractProduct
 {
-    public string $sku = "[A-Z0-9]{0,50}";
+    public string $sku = "[a-zA-Z_0-9]{0,50}";
     public string $name = "[a-zA-Z 0-9,.]{0,50}";
     public string $price = "[1-9]{0,1}[0-9]{0,45}[,]{0,1}[.]{0,1}[0-9]{0,2}";
     public string $type = "[a-zA-Z]{1,20}";
@@ -12,7 +12,6 @@ class Product extends AbstractProduct
     private int $itemsPerPage;
 
     private $DB;
-
 
     public function __construct($itemsPerPage = 0, $DB) {
        $this->itemsPerPage = $itemsPerPage;  

@@ -1,7 +1,7 @@
 <?php
 //use ;
 
-class DVDProduct extends Product
+class DVDProduct extends MainProduct
 {
     public int $size = "[1-9]{1}[0-9]{0,49}";
     

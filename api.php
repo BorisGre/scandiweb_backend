@@ -91,16 +91,17 @@ class API
    public function mapEndpointToController(){
 
       $typeOfClass = "Controller";
+      $path = "Controllers/";
       $defaultEndpoint = ["" => "Product"];
 
       $endpoints = ["Product" => "[a-z]{0,10}product(a-z){0,10}"];
        
-      $className = null;
+      $classNameArray = ['Abstract'];
       $controllerClass = null;
 
       if(array_key_exists($this->endpoint, $defaultEndpoint)){
             
-            $className = $defaultEndpoint[$this->endpoint];
+            array_push($classNameArray, $defaultEndpoint[$this->endpoint]);
       } 
  
       foreach($endpoints as $endpoint => $pattern){
@@ -113,33 +114,34 @@ class API
             }
       }
 
-      if(isset($className) === true){
-    
-        $path = "Controllers/";
-      
-        $controllerClass = $this->classLoader::loadClass($className.$typeOfClass, $path);    
-        //var_dump($controllerClass, $className.$typeOfClass);
+      foreach($classNameArray as $className){ 
+
+            if(isset($className) === true){
+                        
+                $controllerClass = $this->classLoader::loadClass($className.$typeOfClass, $path);    
+                //var_dump($controllerClass, $className.$typeOfClass);
+            }
       }
         
-     return $controllerClass;
-   }
- 
-   public function runController($ControllerClass){
-  
-        $this->currentController = new $ControllerClass($this->config, $this->parsedData);
-        return $this->currentController->run();
-   }
-
-   public function getStatusMessage($statusCode) {
-
-        $statusMessage = [
-                200 => 'OK',
-                404 => 'Not Found',
-                405 => 'Method Not Allowed',
-                500 => 'Internal Server Error',
-            ];
-        return ($statusMessage[$statusCode]) ? $statusMessage[$statusCode] : $statusMessage[500];
+      return $controllerClass;
     }
+ 
+    public function runController($ControllerClass){
+
+            $this->currentController = new $ControllerClass($this->config, $this->classLoader, $this->parsedData, "");
+            return $this->currentController->run();
+    }
+
+    public function getStatusMessage($statusCode) {
+
+            $statusMessage = [
+                    200 => 'OK',
+                    404 => 'Not Found',
+                    405 => 'Method Not Allowed',
+                    500 => 'Internal Server Error',
+                ];
+            return ($statusMessage[$statusCode]) ? $statusMessage[$statusCode] : $statusMessage[500];
+        }
 
     protected function prepareResponse($statusCode, $data){
 

@@ -1,7 +1,7 @@
 <?php
 //use ;
 
-class BOOKProduct extends Product
+class BOOKProduct extends MainProduct
 {
     public int $weight = "[1-9]{1}[0-9]{0,49}";
 

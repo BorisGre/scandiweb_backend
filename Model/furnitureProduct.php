@@ -1,7 +1,7 @@
 <?php
 //use ;
 
-class FurnitureProduct extends Product
+class FurnitureProduct extends MainProduct
 {
     public int $height = "[1-9]{1}[0-9]{0,49}";
     public int $length = "[1-9]{1}[0-9]{0,49}";

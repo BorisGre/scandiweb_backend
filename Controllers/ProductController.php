@@ -1,47 +1,48 @@
 <?php
 
-//use Scandiweb\ProductsAPI\ProductsAPICOn;
-//use Scandiweb\ProudctsAPI\Product;
-require_once "DB.php";
-require_once "Model/product.php";
-require_once "AbsctractController.php";
-
-class ProductController extends AbsctractController
+class ProductController extends AbstractController
 {
    protected $method; //GET|POST|PUT|DELETE
    protected $action; //endpoint 
 
    protected $DB;
    
-   public function __construct($config, $parsedData) {
-
+   public function __construct($config, $classLoader, $parsedData, $DB) {
+    
+     $this->classLoader = $classLoader;
      $this->itemsPerPage = $config->itemsPerPage;
-     $this->DB = new DB($config->DB);
+     $this->DB = ""; //new $DB($config->DB);
+     $this->method = $parsedData['method'];
+     $this->productType = $parsedData['productType'];
    }
 
    public function mapRequestToAction(){
 
-       if($this->method !== 'POST' OR $this->method === 'PUT'){
-
-           $typeOfClass = 'Product';
-           $className = $this->methodParams['product']['type'].$typeOfClass;
-
-           $ProductClass = $this->loadClasses::loadClass($className, $path);
-           $productObj = new ProductClass($this->itemsPerPage, $this->DB);        
-
-       } else {
-
-           $productObj = new Product($this->itemsPerPage, $this->DB);  
-       }
-
-       //var_dump($productObj);
+      $path = "./Model";
+      $typeOfClass = 'Product';
+      $className = $this->productType;          
+      $classNameArray = ['Abstract', 'Main'];
+      $productClass = null;
+      
+      if(isset($className) === true){
+            
+            array_push($classNameArray, $className);
+      } 
+      
+      foreach($classNameArray as $className){ 
+      
+                $productClass = $this->classLoader::loadClass($className.$typeOfClass, $path);    
+                //var_dump($controllerClass, $className.$typeOfClass);
+      }
+      
+      $productObj = new ProductClass($this->itemsPerPage, $this->DB);        
+      
       $methodToAction = array("POST" => $productObj->addProduct, 
-                              "GET" => $productObj->getProduct,
-                              "PUT" => $productObj->updateProduct,
-                              "DELETE" => $productObj->deleteProduct
-                             );
-
-       var_dump($methodToAction);
+                               "GET" => $productObj->getProduct,
+                               "PUT" => $productObj->updateProduct,
+                            "DELETE" => $productObj->deleteProduct
+                        );
+      
       return $methodToAction[$this->method];
     }
 

@@ -2,7 +2,7 @@
 
 //use Scandiweb\ProductsAPI;
 
-abstract class AbsctractController
+abstract class AbstractController
 {
    protected $method; //GET|POST|PUT|DELETE
 
