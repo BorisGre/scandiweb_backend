@@ -1,8 +1,7 @@
 <?php
 //use ;
-//require_once "AbstractProduct.php";
 
-class Product extends AbstractProduct
+class MainProduct extends AbstractProduct
 {
     public string $sku = "[a-zA-Z_0-9]{0,50}";
     public string $name = "[a-zA-Z 0-9,.]{0,50}";
@@ -13,30 +12,34 @@ class Product extends AbstractProduct
 
     private $DB;
 
-    public function __construct($itemsPerPage = 0, $DB) {
-       $this->itemsPerPage = $itemsPerPage;  
-       $this->DB = $DB;
+    public function __construct($config) {
+
+       $this->itemsPerPage = $config->itemsPerPage;  
+       $this->DB = new DB($config->DB);
     }
 
     public function addProduct($newProduct, $checkingFiledsArray){
 
         $status = false;
+        $numOfProductAfter = 0;
 
         try {
+                $validateStatus = $this->validate($newProduct, $checkingFiledsArray);
 
-            $validateStatus = $this->validate($newProduct, $checkingFiledsArray);   
-             
-              if($validateStatus === true){
-                 $this->DB->_product()->add($newProduct);
-                 $status = true;
-              }
+                if($validateStatus === true){
+                   
+                   $numOfProductBefore = ($this->DB->product)()->count('');
+                   $addStatus = ($this->DB->product)()->add('', $newProduct);
+                   $numOfProductAfter = ($this->DB->product)()->count('');
+                   
+                   $status = ($addStatus AND $numOfProductBefore < $numOfProductAfter) ? true : false; 
+                }
 
            } catch(Exception $e) {
 
-             return ["status" => $status, "error" => $e];
+               return ["status" => $status, "error" => $e];
         }
-
-        return ["status" => $status];
+       return ["status" => $status, "product" => $newProduct, "total" => $numOfProductAfter];
     }
 
     public function getProduct($pageNumber = 0){
@@ -70,37 +73,41 @@ class Product extends AbstractProduct
     public function updateProduct($updatingProduct, $checkingFiledsArray){
 
         $status = false;
-
+        
         try {
+                $validateStatus = $this->validate($updatingProduct, $checkingFiledsArray);
 
-            $validateStatus = $this->validate($updatingProduct, $checkingFiledsArray);   
-             
-              if($validateStatus === true){
-                 $this->DB->_product()->update($updatingProduct);
-                 $status = true;
-              }
+                if($validateStatus === true){
+                   
+                   $updateStatus = ($this->DB->product)()->update('', $updatingProduct); 
+                   $status = $updateStatus ? true : false;
+                }
 
            } catch(Exception $e) {
 
-             return ["status" => $status, "error" => $e];
+               return ["status" => $status, "error" => $e];
         }
-
-        return ["status" => $status];
+       return ["status" => $status, "product" => $updatingProduct];
     }
 
     public function deleteProduct($skuArray){
 
         $status = false;
+        $numOfProductAfter = 0;
 
         try {
 
-            foreach($skuArray as $sku => $value){
+            foreach($skuArray as $sku){
 
-              $validateStatus = $this->validate(["sku" => $value], ["sku" => $this->sku]);   
+              $validateStatus = $this->validate(["sku" => $sku], ["sku" => $this->sku]);   
              
                 if($validateStatus === true){
-                    $this->DB->_product()->delete([$sku => $value]);
-                    $status = true;
+
+                    $numOfProductBefore = ($this->DB->product)()->count('');
+                    $deleteStatus = ($this->DB->product)()->delete(["sku" => $sku]);
+                    $numOfProductAfter = ($this->DB->product)()->count('');
+                    
+                    $status = ($deleteStatus AND $numOfProductBefore < $numOfProductAfter) ? true : false; 
                 }
             } 
 
@@ -109,7 +116,7 @@ class Product extends AbstractProduct
              return ["status" => $status, "error" => $e];
         }
 
-        return ["status" => $status];
+        return ["status" => $status, "total" => $numOfProductAfter];
     }
 
     public function validate($obj, $checkingFiledsArray){
@@ -126,8 +133,7 @@ class Product extends AbstractProduct
             throw new Exception("Field ".$key." value is doesn't valid");
            }
          }
-         //count($obj) == count($checkingFiledsArray);
-
+        
         return $validationStatus;
     }
 

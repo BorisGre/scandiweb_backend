@@ -13,7 +13,7 @@
 		private $order;
 
 		private $__DBtables = array();
-		private $__currentTable = 'product';
+		//private $__currentTable = 'product';
 		
 		public function __construct($config){
 
@@ -148,12 +148,19 @@
 
 		public function count($table = ''){
 
-			$table = $table ? $table : $this->__currentTable;
+			$table = $table ? $table : $this->currentTable;
 
 			$query = sprintf("SELECT COUNT(*) FROM (%s)", $table);
 			$this->__mysql->real_query($query);
 			$result = $this->__mysql->use_result();
 			return $result->fetch_row()[0];
+		}
+
+		public function getTypes(){
+
+			$this->__mysql->real_query('SELECT name FROM TYPE');
+			
+			return $types;
 		}
 
 		public function add($table = '', $data){
@@ -163,13 +170,13 @@
 			
 			foreach($data as $column => $value){
 
-				$fields .= sprintf("`%s`,", $column);
+				$fields .= sprintf("`%s`,", $this->__mysql->real_escape_string($column));
 				$values .= sprintf("'%s',", $this->__mysql->real_escape_string($value));
 			}
 			$fields = substr($fields, 0, -1);
 			$values = substr($values, 0, -1);
 
-			$table = $table ? $table : $this->__currentTable;
+			$table = $table ? $table : $this->currentTable;
 			$sql = sprintf("INSERT INTO %s (%s) VALUES (%s)", $table, $fields, $values);
 		
 			if(!$this->__mysql->query($sql)){
@@ -179,16 +186,13 @@
 
 				return true;
 			}
-		}
+		}	
 		
 		public function get($table = '', $page = 0, $itemsPerPage){
 			
-			echo "eurika\n";
-			//return true;
-
 		    $data = [];
 
-			$table = $table ? $table : $this->__currentTable;
+			$table = $table ? $table : $this->currentTable;
 
 			$sql = sprintf("SELECT * FROM %s limit %s,%s", $table, $page*$itemsPerPage, $itemsPerPage);
 
@@ -197,7 +201,7 @@
 					$this->__mysql->real_query($sql);
 				
 					if ($result = $this->__mysql->use_result()){
-					//	echo "CCC";
+					
 						$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 						$data = $rows;
 						foreach ($rows as $row) {
@@ -214,14 +218,6 @@
 			return $data;
 		}
 
-		public function getTypes(){
-
-			$this->__mysql->real_query('SELECT name FROM TYPE');
-			
-
-			return $types;
-		}
-	
 		
 		public function update($table = '', $data){
 
@@ -230,19 +226,19 @@
 			
 			foreach($data as $column => $value){
 
-				$fields .= sprintf("`%s`,", $column);
+				$fields .= sprintf("`%s`,", $this->__mysql->real_escape_string($column));
 				$values .= sprintf("'%s',", $this->__mysql->real_escape_string($value));
 			}
 			$fields = substr($fields, 0, -1);
 			$values = substr($values, 0, -1);
 
-			$table = $table ? $table : $this->__currentTable;
+			$table = $table ? $table : $this->currentTable;
 			$sql = sprintf("UPDATE INTO %s (%s) VALUES (%s)", $table, $fields, $values);
 		
 			if(!$this->__mysql->real_query($sql)){
 
 				throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->__mysql->errno.': '.$this->__mysql->error);
-			}else{
+			} else { 
 
 				return true;
 			}		
@@ -250,11 +246,14 @@
 		
 		public function delete($table = '', $data){
 			
-			$table = $table ? $table : $this->__currentTable;
+			$table = $table ? $table : $this->currentTable;
 
 			foreach($data as $field => $value){
 
-				$this->where = $field .'="'.$value.'"';
+				$escapedField = $this->__mysql->real_escape_string($field);
+				$escapedValue = $this->__mysql->real_escape_string($value);
+
+				$this->where = $escapedField.'="'.$escapedValue.'"';
 			}
 
 			if(empty($this->where)){

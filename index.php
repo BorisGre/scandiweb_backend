@@ -1,7 +1,7 @@
 <?php
   //namespace Scandiweb;
   define('__BASE_DIR__', '.');
-  
+  define('__ENV__', 'dev');
   require_once 'LoadClasses.php';
 
   try {
@@ -9,17 +9,12 @@
     $loadClass = new LoadClasses();
     $loadClass->initLoad(__BASE_DIR__);
 
-   // var_dump(get_declared_classes()); 
-   // var_dump(LoadClasses);
-    $config = new Config();
+    $config = new Config(__ENV__);
     $api = new API($config, $loadClass);
-    var_dump($api->run());
-   
-    ///a = new LoadClasses;
-   
-     echo "AAA";
-     //echo $api->run();
+    echo $api->run();
+    echo "End of script";
+
   } catch (Exception $e) {
-      echo json_encode(Array('error' => $e->getMessage()));
+      echo json_encode(['error' => $e->getMessage()]);
   }
 ?>

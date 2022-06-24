@@ -4,59 +4,60 @@ class ProductController extends AbstractController
 {
    protected $method; //GET|POST|PUT|DELETE
    protected $action; //endpoint 
-
-   protected $DB;
    
-   public function __construct($config, $classLoader, $parsedData, $DB) {
+   public function __construct($config, $parsedData) {
     
-     $this->classLoader = $classLoader;
+     $this->config = $config;
      $this->itemsPerPage = $config->itemsPerPage;
-     $this->DB = ""; //new $DB($config->DB);
      $this->method = $parsedData['method'];
      $this->productType = $parsedData['productType'];
    }
 
+   /* Lazy loading of Product Models */
    public function mapRequestToAction(){
 
-      $path = "./Model";
+      $path = "./Model/";
       $typeOfClass = 'Product';
       $className = $this->productType;          
       $classNameArray = ['Abstract', 'Main'];
       $productClass = null;
       
-      if(isset($className) === true){
+      if(isset($className) === true AND strlen($className) > 0){
             
             array_push($classNameArray, $className);
       } 
       
       foreach($classNameArray as $className){ 
-      
-                $productClass = $this->classLoader::loadClass($className.$typeOfClass, $path);    
-                //var_dump($controllerClass, $className.$typeOfClass);
+              
+                $productClass = LoadClasses::loadClass($className.$typeOfClass, $path);    
       }
+ 
+      $productObj = new $productClass($this->config);        
       
-      $productObj = new ProductClass($this->itemsPerPage, $this->DB);        
-      
-      $methodToAction = array("POST" => $productObj->addProduct, 
-                               "GET" => $productObj->getProduct,
-                               "PUT" => $productObj->updateProduct,
-                            "DELETE" => $productObj->deleteProduct
+      $methodToAction = array("POST" => fn() => $productObj->addProduct(),   //newProduct
+                               "GET" => fn() => $productObj->getProduct(),   //page
+                               "PUT" => fn() => $productObj->updateProduct(),//updatedProduct
+                            "DELETE" => fn() => $productObj->deleteProduct() //skuArray
                         );
       
       return $methodToAction[$this->method];
     }
 
     public function executeAction($mappedAction){
-
+        echo  "mapped ACTION";
+        return $mappedAction();
     }
 
     public function run(){
         echo "ProductController RUN\n";
-       // $this->getRequestParams();
-        //$types = $this->DB->get('types');
+      
         $types = [];
-       // $mappedAction = $this->mapRequestToAction($types);
+        $mappedAction = $this->mapRequestToAction();
 
-        return [];// $this->executeAction($mappedAction);
+        echo "mapped action\n";
+
+        //var_dump($this->executeAction($mappedAction));
+
+        return $this->executeAction($mappedAction);
   }
 }

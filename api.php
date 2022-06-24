@@ -13,18 +13,20 @@ class API
    private $statusCode = 200;
 
    private $currentController;
+   private $endpoint;
    private $config;
-   private $parsedData;
+   private $parsedData = ["method" => 'GET', "productType" => null];
    private $classLoader;
 
    
-   public function __construct($config, $classLoader) {
+   public function __construct($config){
 
-        $this->classLoader = $classLoader;
         $this->config = $config;
    }
 
    public function parse(){
+
+        echo "START Parse\n";
 
         $this->requestUri = explode('/', trim($_SERVER['REQUEST_URI'],'/'));
         $this->requestParams = $_REQUEST;
@@ -34,6 +36,21 @@ class API
         $allwodeMethods = $allMethods;
         $this->method = $_SERVER['REQUEST_METHOD'];
         $endpoints = ["/", "addproduct"];
+
+        $methodToData = ["GET" => $_GET, "POST" => $_POST, "PUT" => $_POST, "DELETE" => $_POST];
+
+
+        echo "METHOD ".$this->method."\n";
+        var_dump($_GET, $_REQUEST, $_SERVER, $_POST);
+
+        if($this->method === "GET"){
+            $this->parsedData = $_GET;
+        }
+        $this->parsedData = ["method" => $this->method, "productType" => ""];/**/
+        //$this->parsedData = $methodToData[$this->method];
+
+        //$getData = $_GET
+
 
         /*if(in_array($this->method, $allwodeMethods) === false){
 
@@ -56,17 +73,17 @@ class API
             $this->methodParams = $_POST['params'];
         }   */
         $this->endpoint = "";
+        //return ;
     }
 
    public function run(){
 
-          $this->parse();
-        
+        // return  
+        $this->parse();
+         echo "AFTER PARSER.\n";
           $mappedController = $this->mapEndpointToController();
           $rawResult = [];
-
-          echo "ISSET: ".$mappedController."\n"; 
-           
+     
           if(isset($mappedController) === false){
 
              $this->statusCode = 404;
@@ -88,11 +105,13 @@ class API
           }
    }
 
+   /* Lazy loading of Controlles */
    public function mapEndpointToController(){
 
       $typeOfClass = "Controller";
       $path = "Controllers/";
-      $defaultEndpoint = ["" => "Product"];
+      $defaultEndpoint = [          "" => "Product", 
+                          "addproduct" => "Product"];
 
       $endpoints = ["Product" => "[a-z]{0,10}product(a-z){0,10}"];
        
@@ -118,8 +137,7 @@ class API
 
             if(isset($className) === true){
                         
-                $controllerClass = $this->classLoader::loadClass($className.$typeOfClass, $path);    
-                //var_dump($controllerClass, $className.$typeOfClass);
+                $controllerClass = LoadClasses::loadClass($className.$typeOfClass, $path);  
             }
       }
         
@@ -128,7 +146,9 @@ class API
  
     public function runController($ControllerClass){
 
-            $this->currentController = new $ControllerClass($this->config, $this->classLoader, $this->parsedData, "");
+            var_dump($this->config, $this->parsedData);
+
+            $this->currentController = new $ControllerClass($this->config, $this->parsedData);
             return $this->currentController->run();
     }
 

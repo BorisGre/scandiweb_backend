@@ -10,7 +10,7 @@ class LoadClasses{
         //$this->baseDIR = $baseDIR;
     }
 
-    public function loadClass($className, $path = ""){
+    public static function loadClass($className, $path = ""){
 
         $classFile = $className.'.php';
         $filePath = $path.''.$classFile;
