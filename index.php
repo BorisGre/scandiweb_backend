@@ -11,10 +11,12 @@
 
     $config = new Config(__ENV__);
     $api = new API($config, $loadClass);
+    
     echo $api->run();
     echo "End of script";
 
   } catch (Exception $e) {
+    
       echo json_encode(['error' => $e->getMessage()]);
   }
 ?>

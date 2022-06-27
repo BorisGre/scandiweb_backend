@@ -8,11 +8,11 @@ abstract class AbstractProduct
     public string $price;
     public string $type;
 
-    abstract public function addProduct($newProduct, $patternArray);
+    abstract public function addProduct($newProduct);
 
     abstract public function getProduct($pageNumber);
 
-    abstract public function updateProduct($updatingProduct, $patternArray);
+    abstract public function updateProduct($updatingProduct);
 
     abstract public function deleteProduct($skuArray);
 

@@ -30,4 +30,4 @@
                               "database" => "Scandiweb",
    );       //$this->env == 'dev' ? $devDB : $prodDB;
   }
-  ?>
+?>

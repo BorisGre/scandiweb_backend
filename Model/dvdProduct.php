@@ -1,41 +1,39 @@
 <?php
 //use ;
 
-class DVDProduct extends MainProduct
+class DvdProduct extends MainProduct
 {
-    public int $size = "[1-9]{1}[0-9]{0,49}";
+    public string $size = "[1-9]{1}[0-9]{0,49}";
     
-    public function __construct($itemsPerPage = 0, $DB) {
-        parent::__construct($itemsPerPage, $DB);
+    public function __construct($config) {
+        parent::__construct($config);
 
-        $validatingFieldsArray = array();   
+        $validatingFieldsArray = [];   
 
         foreach ($this as $key => $value) {
 
             $validatingFieldsArray[$key] = $value;
         }
 
-        $this->validatingFieldsArray = $validatingFieldsArray;
-        array_push($validatingFieldsArray, parent->productMainFieldsArray());
+        $this->validatingFieldsArray = array_merge(parent::productMainFieldsArray(), $validatingFieldsArray);
+
+        var_dump($this->validatingFieldsArray);
+        echo "end of construct dvd\n"; 
     }
 
-    public function add($newProduct = []){
+    public function addProduct($newProduct){
+        
+        $dto['newProduct'] = $newProduct;
+        $dto['validation'] = $this->validatingFieldsArray;
 
-        return parent->addProduct($newProduct, $this->validatingFieldsArray);
+        return parent::addProduct($dto);
     }
 
-    public function get($pageNumber = 0){
-       
-        return parent->getProduct($pageNumber);
+    public function updateProduct($updatingProduct){
+
+        $dto['updatingProduct'] = $updatingProduct;
+        $dto['validation'] = $this->validatingFieldsArray;
+        
+        return parent::updateProduct($dto);
     }
-
-    public function update($updatingProduct = []){
-
-        return parent->updateProduct($updatingProduct, $this->validatingFieldsArray);
-    }
-
-    public function delete($skuArray = []){
-      
-        return parent->deleteProduct($skuArray);
-    }  
 }

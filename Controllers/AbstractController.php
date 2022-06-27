@@ -4,7 +4,7 @@
 
 abstract class AbstractController
 {
-   protected $method; //GET|POST|PUT|DELETE
+   protected $method; //GET|POST|PUT|DELETE|OTIONS|HEAD
 
    public $requestUri;
    public $requestParams;

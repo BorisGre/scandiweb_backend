@@ -3,21 +3,18 @@
 
 class API
 {
-   protected $method; //GET|POST|PUT|DELETE
+   protected $method; //GET|POST|PUT|DELETE|OPTIONS|HEAD
 
    public $requestUri;
    public $requestParams;
 
-   protected $action; //endpoint 
-
-   private $statusCode = 200;
-
-   private $currentController;
-   private $endpoint;
+   private $currentController = null;
+   private array $route = [];
    private $config;
-   private $parsedData = ["method" => 'GET', "productType" => null];
-   private $classLoader;
+   private $statusCode = 200;
+   private $rawResult = "";
 
+   private array $parsedData = ["method" => "", "route" => [], "data" => "", "requestParams" => ""];
    
    public function __construct($config){
 
@@ -26,110 +23,119 @@ class API
 
    public function parse(){
 
-        echo "START Parse\n";
+        $implementedMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"];
+        $this->method = $_SERVER['REQUEST_METHOD'];
+ 
+
+        if(in_array($this->method, $implementedMethods) === false){ 
+
+            $this->$statusCode = 501;
+            return $this->rawResult;
+        }  
+
+        $this->parsedData['method'] = $this->method;
+
+        if($this->method === "OPTIONS"){
+
+            return $this->rawResult = $implementedMethods;
+        }
+
+        if($this->method === "HEAD"){
+
+            return $this->rawResult;
+        }
+
 
         $this->requestUri = explode('/', trim($_SERVER['REQUEST_URI'],'/'));
-        $this->requestParams = $_REQUEST;
-         // QUERY_STRING
-         //
-        $allMethods = ["GET", "POST", "PUT", "DELETE"];
-        $allwodeMethods = $allMethods;
-        $this->method = $_SERVER['REQUEST_METHOD'];
-        $endpoints = ["/", "addproduct"];
+        $lastElementIndexOfUri = count($this->requestUri)-1;
 
-        $methodToData = ["GET" => $_GET, "POST" => $_POST, "PUT" => $_POST, "DELETE" => $_POST];
+        if(in_array($this->method, ["POST", "PUT"])){
+        
+            $this->parsedData['data']  = json_decode(file_get_contents('php://input'), true);
+            $this->parsedData['route'] = $this->requestUri;
 
+        } else {
 
-        echo "METHOD ".$this->method."\n";
-        var_dump($_GET, $_REQUEST, $_SERVER, $_POST);
-
-        if($this->method === "GET"){
-            $this->parsedData = $_GET;
+            $this->parsedData['data']  = $this->requestUri[$lastElementIndexOfUri];
+            $this->parsedData['route'] = array_slice($this->requestUri, 0, $lastElementIndexOfUri);
         }
-        $this->parsedData = ["method" => $this->method, "productType" => ""];/**/
-        //$this->parsedData = $methodToData[$this->method];
+ 
 
-        //$getData = $_GET
+       /* foreach($this->requestUri as $uri){
 
+            preg_match("/^\/?[\w]+/", $uri, $matches);
 
-        /*if(in_array($this->method, $allwodeMethods) === false){
+            if(empty($matches) === false){
+                array_push($this->route, $uri);
+            }  
 
-            $this->statusCode = 405;
+            $this->requestParams = $uri;
+            $this->parsedData['requestParams'] = $uri;
         }
 
-        if(array_key_exists('HTTP_X_HTTP_METHOD', $_SERVER) === false OR in_array($this->method, $allMethods) === false){ 
-            
-            $this->statusCode = 404;
-            throw new Exception("Unexpected Method on parse");
-        }   
-
-        if($this->method === "GET"){
-
-            $this->methodParams = $this->requestUri[0];
-        }
-
-        if($this->method !== "GET" AND in_array($this->method, $methods)){
-
-            $this->methodParams = $_POST['params'];
-        }   */
-        $this->endpoint = "";
-        //return ;
+        return $implementedMethods;*/
     }
 
-   public function run(){
+    public function run(){
 
-        // return  
-        $this->parse();
-         echo "AFTER PARSER.\n";
+          $this->parse();
+          
+          if($this->method === "OPTIONS" OR $this->method === "HEAD"){
+
+                $res = $this->prepareResponse($this->statusCode, $this->rawResult);
+                return $this->response($res);
+          }
+         
           $mappedController = $this->mapEndpointToController();
-          $rawResult = [];
      
           if(isset($mappedController) === false){
 
              $this->statusCode = 404;
-             $this->prepareResponse($this->statusCode, $rawResult);
-             return $this->response($rawResult);   
+             $this->prepareResponse($this->statusCode, $this->rawResult);
+             return $this->response($this->rawResult);   
           }                            
 
           try {
 
-            $rawResult = $this->runController($mappedController);   
-            $preparedResponse = $this->prepareResponse($this->statusCode, $rawResult);
+            $this->rawResult = $this->runController($mappedController);   
+            $preparedResponse = $this->prepareResponse($this->statusCode, $this->rawResult);
             return $this->response($preparedResponse);    
 
           } catch (Exception $e){
              
              $this->statusCode = 500;
-             $this->prepareResponse($this->statusCode, $rawResult);
-             return $this->response($rawResult);
+             $this->prepareResponse($this->statusCode, $this->rawResult);
+             return $this->response($this->rawResult);
           }
-   }
+    }
 
    /* Lazy loading of Controlles */
    public function mapEndpointToController(){
 
       $typeOfClass = "Controller";
       $path = "Controllers/";
-      $defaultEndpoint = [          "" => "Product", 
-                          "addproduct" => "Product"];
-
-      $endpoints = ["Product" => "[a-z]{0,10}product(a-z){0,10}"];
-       
+    
+      $className = null;
       $classNameArray = ['Abstract'];
-      $controllerClass = null;
+      $controllerClass = null; 
 
-      if(array_key_exists($this->endpoint, $defaultEndpoint)){
-            
-            array_push($classNameArray, $defaultEndpoint[$this->endpoint]);
-      } 
- 
-      foreach($endpoints as $endpoint => $pattern){
+      $defaultEndpoint = "product";
+      $endpoints = ["Product" => "[a-z]{0,10}product(a-z){0,10}"];
+
+      //all wrong uri redirects to Product controller;
+      $endpoint = count($this->route) === 0 ? $defaultEndpoint : $this->route[0];
+      
+      foreach($endpoints as $controller => $pattern){
            
-            preg_match("/".$pattern."/", $this->endpoint, $matches);
-            
-            if(!empty($matches) AND isset($className) === false){
+            preg_match("/".$pattern."/", $endpoint, $matches);
 
-                $className = $endpoint;
+            if(!empty($matches) AND isset($className) === false){
+                
+                if($matches[0] === $endpoint){
+                
+                    $className = $controller;
+                    array_push($classNameArray, $className);
+                }    
             }
       }
 
@@ -146,8 +152,6 @@ class API
  
     public function runController($ControllerClass){
 
-            var_dump($this->config, $this->parsedData);
-
             $this->currentController = new $ControllerClass($this->config, $this->parsedData);
             return $this->currentController->run();
     }
@@ -159,6 +163,7 @@ class API
                     404 => 'Not Found',
                     405 => 'Method Not Allowed',
                     500 => 'Internal Server Error',
+                    501 => 'Not Implemented',
                 ];
             return ($statusMessage[$statusCode]) ? $statusMessage[$statusCode] : $statusMessage[500];
         }
@@ -168,6 +173,7 @@ class API
         header("Access-Control-Allow-Orgin: *");
         header("Access-Control-Allow-Methods: *");
         header("Content-Type: application/json");
+        header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
         header("HTTP/1.1 " . $statusCode . " " . $this->getStatusMessage($statusCode));
         
         return $data;

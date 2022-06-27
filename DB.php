@@ -2,22 +2,24 @@
 //namespace Scandiweb;
 	class DB{
 	
-		private $__link = false;
-		private $__instance = false;
+		private $__link = null;
+		//private $__instance = null;
 		private $__mysql = null;
 	
-		private $__config = array();
-		
-		private $where;
-		private $limit;
-		private $order;
+		private array $__config = array();
+		private string $currenTable; 
+
+		private string $where;
+		private string $limit;
+		private string $order;
 
 		private $__DBtables = array();
-		//private $__currentTable = 'product';
+	
 		
-		public function __construct($config){
+		public function __construct($config, $itemsPerPage = 0){
 
 			$this->__config = $config;
+			$this->itemsPerPage = $itemsPerPage;
 			$this->__mysql = new mysqli;
 			$this->__link = $this->connect();
 			$this->buildTablesLinks = $this->buildLinks();
@@ -148,9 +150,7 @@
 
 		public function count($table = ''){
 
-			$table = $table ? $table : $this->currentTable;
-
-			$query = sprintf("SELECT COUNT(*) FROM (%s)", $table);
+			$query = sprintf("SELECT COUNT(*) FROM (%s)", $this->currentTable);
 			$this->__mysql->real_query($query);
 			$result = $this->__mysql->use_result();
 			return $result->fetch_row()[0];
@@ -163,7 +163,7 @@
 			return $types;
 		}
 
-		public function add($table = '', $data){
+		public function add($data){
 			
 			$fields = '';
 			$values = '';
@@ -176,8 +176,7 @@
 			$fields = substr($fields, 0, -1);
 			$values = substr($values, 0, -1);
 
-			$table = $table ? $table : $this->currentTable;
-			$sql = sprintf("INSERT INTO %s (%s) VALUES (%s)", $table, $fields, $values);
+			$sql = sprintf("INSERT INTO %s (%s) VALUES (%s)", $this->currentTable, $fields, $values);
 		
 			if(!$this->__mysql->query($sql)){
 
@@ -188,13 +187,13 @@
 			}
 		}	
 		
-		public function get($table = '', $page = 0, $itemsPerPage){
+		public function get($page = 0){
 			
 		    $data = [];
+			$offset = $this->__mysql->real_escape_string($page*$this->itemsPerPage);
+			$limit = $this->itemsPerPage;
 
-			$table = $table ? $table : $this->currentTable;
-
-			$sql = sprintf("SELECT * FROM %s limit %s,%s", $table, $page*$itemsPerPage, $itemsPerPage);
+			$sql = sprintf("SELECT * FROM %s limit %s,%s", $this->currentTable, $offset, $this->itemsPerPage);
 
 			 try {
 
@@ -219,7 +218,7 @@
 		}
 
 		
-		public function update($table = '', $data){
+		public function update($data){
 
 			$fields = '';
 			$values = '';
@@ -232,8 +231,7 @@
 			$fields = substr($fields, 0, -1);
 			$values = substr($values, 0, -1);
 
-			$table = $table ? $table : $this->currentTable;
-			$sql = sprintf("UPDATE INTO %s (%s) VALUES (%s)", $table, $fields, $values);
+			$sql = sprintf("UPDATE INTO %s (%s) VALUES (%s)", $this->currentTable, $fields, $values);
 		
 			if(!$this->__mysql->real_query($sql)){
 
@@ -244,9 +242,7 @@
 			}		
 		}
 		
-		public function delete($table = '', $data){
-			
-			$table = $table ? $table : $this->currentTable;
+		public function delete($data){
 
 			foreach($data as $field => $value){
 
@@ -261,7 +257,7 @@
 				throw new Exception("Where is not set. Can't delete whole table.");
 			} else {
 			
-				$sql = sprintf("DELETE FROM %s%s", $table, ' WHERE '.$this->where); //$this->extra());
+				$sql = sprintf("DELETE FROM %s%s", $this->currentTable, ' WHERE '.$this->where); //$this->extra());
 			
 				if(!$this->__mysql->real_query($sql)){
 					

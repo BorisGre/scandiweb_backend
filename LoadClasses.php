@@ -3,8 +3,6 @@
 
 class LoadClasses{
 
-    //public string $baseDIR;
-
     public function __construct(){
 
         //$this->baseDIR = $baseDIR;
@@ -14,8 +12,7 @@ class LoadClasses{
 
         $classFile = $className.'.php';
         $filePath = $path.''.$classFile;
-        //var_dump($filePath);
-
+        
         if(file_exists($filePath) AND $className != self::class){
          
             spl_autoload_register(function($filePath){
