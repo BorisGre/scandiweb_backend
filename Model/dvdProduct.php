@@ -16,9 +16,6 @@ class DvdProduct extends MainProduct
         }
 
         $this->validatingFieldsArray = array_merge(parent::productMainFieldsArray(), $validatingFieldsArray);
-
-        var_dump($this->validatingFieldsArray);
-        echo "end of construct dvd\n"; 
     }
 
     public function addProduct($newProduct){

@@ -59,6 +59,8 @@ class API
             $this->parsedData['data']  = $this->requestUri[$lastElementIndexOfUri];
             $this->parsedData['route'] = array_slice($this->requestUri, 0, $lastElementIndexOfUri);
         }
+
+        $this->parsedData['requestParams'] = $this->requestUri;
  
 
        /* foreach($this->requestUri as $uri){

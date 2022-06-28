@@ -168,6 +168,11 @@
 			$fields = '';
 			$values = '';
 			
+			if(intval($this->countItems($data['sku'])) !== 0){
+
+				return $this->update($data);
+			}
+
 			foreach($data as $column => $value){
 
 				$fields .= sprintf("`%s`,", $this->__mysql->real_escape_string($column));
@@ -186,6 +191,14 @@
 				return true;
 			}
 		}	
+
+		private function countItems($condition){
+
+			$query = sprintf("SELECT COUNT(*) FROM (%s) WHERE sku=(%s)", $this->currentTable, $condition);
+			$this->__mysql->real_query($query);
+			$result = $this->__mysql->use_result();
+			return $result->fetch_row()[0];
+		} 
 		
 		public function get($page = 0){
 			
@@ -222,18 +235,28 @@
 
 			$fields = '';
 			$values = '';
+
+			$condition = $data['sku'];
+			unset($data['sku']);
+
+			if(intval($this->countItems($condition)) === 0){
+
+				throw new Exception("There is no product with sended sku");
+			}
 			
 			foreach($data as $column => $value){
 
-				$fields .= sprintf("`%s`,", $this->__mysql->real_escape_string($column));
-				$values .= sprintf("'%s',", $this->__mysql->real_escape_string($value));
-			}
-			$fields = substr($fields, 0, -1);
-			$values = substr($values, 0, -1);
+				$escapedField = $this->__mysql->real_escape_string($column);
+				$escapedValue = $this->__mysql->real_escape_string($value);
 
-			$sql = sprintf("UPDATE INTO %s (%s) VALUES (%s)", $this->currentTable, $fields, $values);
-		
-			if(!$this->__mysql->real_query($sql)){
+				$fields .= sprintf("`%s`='%s', ", $escapedField, $escapedValue);
+			}
+
+			$fields = substr($fields, 0, -2);
+			
+			$sql = sprintf("UPDATE %s SET %s WHERE sku='%s'", $this->currentTable, $fields, $condition);
+
+			if($this->__mysql->real_query($sql) === false){
 
 				throw new Exception('Error executing MySQL query: '.$sql.'. MySQL error '.$this->__mysql->errno.': '.$this->__mysql->error);
 			} else { 

@@ -13,7 +13,7 @@
     $api = new API($config, $loadClass);
     
     echo $api->run();
-    echo "End of script";
+    //echo "End of script";
 
   } catch (Exception $e) {
     

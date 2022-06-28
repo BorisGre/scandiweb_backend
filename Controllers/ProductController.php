@@ -45,12 +45,19 @@ class ProductController extends AbstractController
 
         $this->productType = isset($this->endpointArgs['type']) ? $this->endpointArgs['type'] : $this->productType;
         $this->productType = ucfirst(strtolower($this->productType));
+       // $this->endpointArgs['type'] = strtoupper($this->productType);
 
         if(strlen($this->productType) === 0){
 
           throw new Exception("productType error".$this->productType);
         }
-      }  
+      }
+      
+      if($this->method === "PUT"){
+
+        $lastRouteIndex = count($this->reqArgs['route'])-1;
+        $this->endpointArgs['sku'] = $this->reqArgs['route'][$lastRouteIndex];
+      }
     }
 
     /* Lazy loading of Product Models */
@@ -76,7 +83,6 @@ class ProductController extends AbstractController
                 $productClass = LoadClasses::loadClass($className.$typeOfClass, $path); 
       }
 
-      echo "mapToRequest\n";
       //var_dump($this->productType, $classNameArray);
  
       $productObj = new $productClass($this->config);    
@@ -86,20 +92,18 @@ class ProductController extends AbstractController
                             "PUT" => fn() => $productObj->updateProduct($this->endpointArgs),//updatedProduct
                          "DELETE" => fn() => $productObj->deleteProduct($this->endpointArgs) //sku
                         ];
-                          echo "AFTER mapping methodToAction\n";
                          
       return $methodToAction[$this->method];
     }
 
     public function executeAction($mappedAction){
 
-        echo "exec mapped action\n";
         return $mappedAction();
     }
 
     public function run(){
 
-      echo "ProductController RUN\n";
+      //echo "ProductController RUN\n";
       $this->prepareArgs();
 
       $mappedAction = $this->mapRequestToAction();

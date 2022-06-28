@@ -22,10 +22,6 @@ class MainProduct extends AbstractProduct
         $newProduct = $argsArray['newProduct'];
         $checkingFiledsArray = $argsArray['validation'];
 
-        echo "QQQQ add product\n";
-        var_dump($checkingFiledsArray);
-        echo "QQQ add end product\n";
-
         $status = false;
         $numOfProductAfter = 0;
 
@@ -43,7 +39,7 @@ class MainProduct extends AbstractProduct
 
            } catch(Exception $e) {
 
-               return ["status" => $status, "error" => $e];
+               return ["status" => $status, "error" => $e->getMessage()];
         }
        return ["status" => $status, "product" => $newProduct, "total" => $numOfProductAfter];
     }
@@ -52,10 +48,6 @@ class MainProduct extends AbstractProduct
         
          $status = false;
          $next = false;
-
-         echo "getproduct\n";
-            var_dump($pageNumber);
-         echo "end get product\n";
 
          try {
                  $validateStatus = $this->validate(["pageNumber" => $pageNumber], 
@@ -77,15 +69,12 @@ class MainProduct extends AbstractProduct
 
             } catch(Exception $e) {
 
-                return ["status" => $status, "error" => $e];
+                return ["status" => $status, "error" => $e->getMessage()];
          }
         return ["next" => $next, "products" => $products];
     }
 
     public function updateProduct($argsArray){
-
-        echo "QQQQQ update product\n";
-        //var_dump($updatingProduct);
 
         $updatingProduct = $argsArray['updatingProduct'];
         $checkingFiledsArray = $argsArray['validation'];
@@ -103,17 +92,14 @@ class MainProduct extends AbstractProduct
 
            } catch(Exception $e) {
 
-               return ["status" => $status, "error" => $e];
+               return ["status" => $status, "error" => $e->getMessage()];
         }
        return ["status" => $status, "product" => $updatingProduct];
     }
 
     public function deleteProduct($skuArray){
 
-        echo "QQQQQ delete product\n";   
         $skuArray = is_array($skuArray) ? $skuArray : [$skuArray];
-
-        var_dump($skuArray);
 
         $status = false;
         $numOfProductAfter = 0;
@@ -126,21 +112,17 @@ class MainProduct extends AbstractProduct
              
                 if($validateStatus === true){
 
-                    echo "Validate status true\n";
                     $numOfProductBefore = ($this->DB->product)()->count('');
                     $deleteProductStatus = ($this->DB->product)()->delete(["sku" => $sku]);
                     $numOfProductAfter = ($this->DB->product)()->count('');
                     
-
-                    var_dump($deleteProductStatus, $numOfProductBefore, $numOfProductAfter);
-                    
-                    $status = ($deleteProductStatus AND $numOfProductBefore < $numOfProductAfter) ? true : false; 
+                    $status = ($deleteProductStatus AND $numOfProductBefore > $numOfProductAfter) ? true : false; 
                 }
             } 
 
            } catch(Exception $e) {
 
-             return ["status" => $status, "error" => $e];
+             return ["status" => $status, "error" => $e->getMessage()];
         }
 
         return ["status" => $status, "total" => $numOfProductAfter];
@@ -149,8 +131,7 @@ class MainProduct extends AbstractProduct
     public function validate($obj, $checkingFiledsArray){
  
         $validationStatus = false;
-        echo "Validate \n";
-        var_dump($obj, $checkingFiledsArray);
+
          foreach($obj as $key => $value) {
 
            preg_match("/".$checkingFiledsArray[$key]."/", $value, $matches);  
